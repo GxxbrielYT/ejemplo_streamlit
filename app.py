@@ -2,95 +2,144 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
 
-# --- CONFIGURACIÓN DE LA PÁGINA ---
-st.set_page_config(page_title="Dashboard de Autos", layout="wide")
+# --- CONFIGURACIÓN DE LA PÁGINA (ESTILO PROFESIONAL) ---
+st.set_page_config(
+    page_title="Dashboard de Vehículos",
+    page_icon="🚗",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-st.title('🏎️ Análisis de Mercado de Vehículos')
-st.markdown("Esta aplicación permite explorar las tendencias en el mercado de venta de coches.")
+# Estilo de gráficos más bonito
+plt.style.use('ggplot')
 
 # --- CARGA DE DATOS ---
 try:
     df = pd.read_csv('car_price_prediction_.csv')
 except FileNotFoundError:
-    st.error("Error: No se encuentra el archivo 'car_price_prediction_.csv'.")
+    st.error("⚠️ No encuentro el archivo 'car_price_prediction_.csv'.")
     st.stop()
 
-# --- BARRA LATERAL (FILTROS) ---
-st.sidebar.header('⚙️ Configuración')
+# --- TÍTULO Y DESCRIPCIÓN ---
+st.title('🚗 Tablero de Control de Mercado Automotriz')
+st.markdown("""
+Bienvenido al panel de análisis. Aquí puedes explorar cómo influyen el **kilometraje**, 
+la **condición** y la **marca** en el precio final de los vehículos.
+""")
 
-# Filtro 1: Seleccionar Marcas
-marcas_disponibles = df['Brand'].unique()
-marcas_seleccionadas = st.sidebar.multiselect(
-    'Selecciona las marcas a analizar:',
-    marcas_disponibles,
-    default=marcas_disponibles[:5] # Por defecto selecciona las 5 primeras
-)
+st.divider()
 
-# Filtro 2: Rango de precios
-precio_min = int(df['Price'].min())
-precio_max = int(df['Price'].max())
-rango_precio = st.sidebar.slider(
-    'Rango de Precio ($)',
-    precio_min, precio_max, (precio_min, precio_max)
-)
+# --- BARRA LATERAL (FILTROS INTELIGENTES) ---
+st.sidebar.header('🔍 Filtros de Búsqueda')
+
+# 1. Filtro de Marca
+todas_marcas = sorted(df['Brand'].unique())
+marcas_sel = st.sidebar.multiselect('Selecciona Marcas:', todas_marcas, default=todas_marcas[:3])
+
+# 2. Filtro de Año (Slider doble)
+min_year, max_year = int(df['Year'].min()), int(df['Year'].max())
+year_range = st.sidebar.slider('Rango de Años:', min_year, max_year, (min_year, max_year))
+
+# 3. Filtro de Condición
+condiciones = df['Condition'].unique()
+condicion_sel = st.sidebar.multiselect('Condición del auto:', condiciones, default=condiciones)
 
 # --- APLICAR FILTROS ---
-# Filtramos la tabla base usando las selecciones del usuario
-df_filtrado = df[
-    (df['Brand'].isin(marcas_seleccionadas)) &
-    (df['Price'] >= rango_precio[0]) &
-    (df['Price'] <= rango_precio[1])
+df_filtered = df[
+    (df['Brand'].isin(marcas_sel)) &
+    (df['Year'].between(year_range[0], year_range[1])) &
+    (df['Condition'].isin(condicion_sel))
 ]
 
-# Si no hay datos, mostrar aviso
-if df_filtrado.empty:
-    st.warning("No hay autos que coincidan con los filtros seleccionados.")
-    st.stop()
+# --- SECCIÓN 1: KPIs (INDICADORES CLAVE) ---
+# Esto le da contexto inmediato al usuario
+st.subheader("📊 Resumen General")
+col1, col2, col3, col4 = st.columns(4)
 
-# --- MOSTRAR DATOS CRUDOS (Opcional) ---
-if st.checkbox('Mostrar tabla de datos filtrados'):
-    st.dataframe(df_filtrado)
-
-st.divider() # Línea separadora
-
-# --- GRÁFICOS ---
-col1, col2 = st.columns(2) # Dividimos la pantalla en 2 columnas
-
-# GRÁFICO 1: Histograma de Precios
 with col1:
-    st.subheader("1. Distribución de Precios")
-    st.write("¿Son caros o baratos la mayoría de los autos?")
+    st.metric("Total de Autos", f"{len(df_filtered)}")
+with col2:
+    # Formato de dinero con comas
+    promedio = df_filtered['Price'].mean()
+    st.metric("Precio Promedio", f"${promedio:,.0f}")
+with col3:
+    # Auto más barato en la selección
+    min_price = df_filtered['Price'].min()
+    st.metric("Precio Mínimo", f"${min_price:,.0f}")
+with col4:
+    # Auto más caro
+    max_price = df_filtered['Price'].max()
+    st.metric("Precio Máximo", f"${max_price:,.0f}")
+
+st.divider()
+
+# --- SECCIÓN 2: ANÁLISIS DE PRECIOS Y DEPRECIACIÓN ---
+col_izq, col_der = st.columns([2, 1]) # La columna izquierda es más ancha
+
+with col_izq:
+    st.subheader("📉 ¿Cómo afecta el kilometraje al precio?")
+    st.caption("Cada punto es un auto. El color indica el año del modelo.")
     
-    fig1, ax1 = plt.subplots(figsize=(6, 4))
-    ax1.hist(df_filtrado['Price'], bins=20, color='skyblue', edgecolor='black')
-    ax1.set_xlabel('Precio')
-    ax1.set_ylabel('Cantidad de Autos')
-    ax1.grid(axis='y', linestyle='--', alpha=0.7)
+    # Gráfico de Dispersión AVANZADO (Con color por año)
+    fig1, ax1 = plt.subplots(figsize=(10, 6))
+    
+    # Scatter plot: X=Millas, Y=Precio, Color=Año
+    scatter = ax1.scatter(
+        df_filtered['Mileage'], 
+        df_filtered['Price'], 
+        c=df_filtered['Year'], 
+        cmap='viridis', # Mapa de color moderno
+        alpha=0.6,      # Transparencia para ver puntos superpuestos
+        edgecolors='w'
+    )
+    
+    ax1.set_xlabel('Kilometraje (Millas)')
+    ax1.set_ylabel('Precio ($)')
+    ax1.set_title('Relación Kilometraje vs. Precio')
+    plt.colorbar(scatter, label='Año del Modelo') # Barra de color lateral
     st.pyplot(fig1)
 
-# GRÁFICO 2: Dispersión (Precio vs Kilometraje)
-with col2:
-    st.subheader("2. Precio vs. Kilometraje")
-    st.write("¿A mayor kilometraje, menor precio?")
+with col_der:
+    st.subheader("⛽ Distribución por Combustible")
+    st.caption("¿Qué tipo de motor domina tu selección?")
     
-    fig2, ax2 = plt.subplots(figsize=(6, 4))
-    ax2.scatter(df_filtrado['Mileage'], df_filtrado['Price'], alpha=0.5, c='orange')
-    ax2.set_xlabel('Kilometraje')
-    ax2.set_ylabel('Precio')
-    ax2.grid(True, linestyle='--', alpha=0.5)
+    # Conteo por tipo de combustible
+    fuel_counts = df_filtered['Fuel Type'].value_counts()
+    
+    # Gráfico de DONA (Donut Chart)
+    fig2, ax2 = plt.subplots(figsize=(6, 6))
+    ax2.pie(
+        fuel_counts, 
+        labels=fuel_counts.index, 
+        autopct='%1.1f%%', 
+        startangle=90,
+        wedgeprops={'width': 0.4, 'edgecolor': 'white'} # Esto lo hace dona
+    )
+    ax2.set_title('Tipos de Combustible')
     st.pyplot(fig2)
 
 st.divider()
 
-# GRÁFICO 3: Precio Promedio por Marca
-st.subheader("3. Comparación de Precios Promedio por Marca")
-st.write("¿Qué marca es más cara en promedio según tu selección?")
+# --- SECCIÓN 3: COMPARATIVA DE MARCAS ---
+st.subheader("🏆 Comparativa de Precios por Marca")
+st.caption("Promedio de precio para las marcas seleccionadas.")
 
-# Calculamos el promedio agrupando por marca
-promedio_marca = df_filtrado.groupby('Brand')['Price'].mean().sort_values()
+# Agrupar por marca y calcular promedio
+avg_price_brand = df_filtered.groupby('Brand')['Price'].mean().sort_values()
 
-fig3, ax3 = plt.subplots(figsize=(10, 5))
-promedio_marca.plot(kind='barh', color='lightgreen', edgecolor='black', ax=ax3)
-ax3.set_xlabel('Precio Promedio')
-ax3.set_ylabel('Marca')
+fig3, ax3 = plt.subplots(figsize=(12, 5))
+# Gráfico de barras horizontales
+barras = ax3.barh(avg_price_brand.index, avg_price_brand.values, color='cornflowerblue')
+
+ax3.set_xlabel('Precio Promedio ($)')
+ax3.set_title('Precio Promedio por Marca')
+
+# Agregar el precio al final de cada barra (Detalle pro)
+for index, value in enumerate(avg_price_brand.values):
+    ax3.text(value, index, f' ${value:,.0f}', va='center')
+
 st.pyplot(fig3)
+
+# --- FIN ---
+st.markdown("---")
+st.markdown("Desarrollado con ❤️ usando Streamlit y Matplotlib")
