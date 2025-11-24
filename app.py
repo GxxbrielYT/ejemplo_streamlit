@@ -90,7 +90,7 @@ with tab2:
         st.markdown("#### Relación: Precio vs Kilometraje vs Condición")
         # Scatterplot avanzado con Seaborn
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(data=df_filtered, x='Mileage', y='Price', hue='Condition', style='Condition', s=100, alpha=0.7, ax=ax)
+        sns.scatterplot(data=df_filtered, x='Kilometraje', y='Precio', hue='Condicion', style='Condicion', s=100, alpha=0.7, ax=ax)
         ax.set_title("Impacto del Uso en el Precio")
         st.pyplot(fig)
         
@@ -110,7 +110,7 @@ with tab2:
     st.markdown("#### Comparativa de Precios por Tipo de Combustible (Boxplot)")
     st.caption("La línea dentro de la caja es la mediana. Los puntos son valores atípicos.")
     fig, ax = plt.subplots(figsize=(12, 5))
-    sns.boxplot(data=df_filtered, x='Fuel Type', y='Price', palette="Set3", ax=ax)
+    sns.boxplot(data=df_filtered, x='Tipo de Combustible', y='Precio', palette="Set3", ax=ax)
     st.pyplot(fig)
 
 # === PESTAÑA 3: DATOS Y DESCARGA ===
