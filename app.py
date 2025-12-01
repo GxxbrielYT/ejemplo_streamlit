@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 
-# --- 1. CONFIGURACIÓN VISUAL ---
+#1. CONFIGURACIÓN VISUAL
 st.set_page_config(
     page_title="Análisis de Mercado Automotor",
     page_icon="🚗",
@@ -16,7 +16,7 @@ sns.set_theme(style="whitegrid")
 COLOR_BARRA = "#2ecc71"
 COLOR_NEGATIVO = "#e74c3c"
 
-# --- 2. CARGA DE DATOS ---
+#2. CARGA DE DATOS
 @st.cache_data
 def cargar_datos():
     try:
@@ -37,7 +37,7 @@ if df is None:
     st.error("¡Ups! No pude encontrar el archivo 'car_price_prediction_.csv'. Por favor, asegúrate de subirlo a tu repositorio de GitHub para que todo funcione.")
     st.stop()
 
-# --- 3. BARRA LATERAL (FILTROS) ---
+#3. BARRA LATERAL (FILTROS)
 with st.sidebar:
     st.header("🎛️ Configura tu vista")
     st.write("Selecciona qué tipo de vehículos quieres analizar:")
@@ -54,15 +54,15 @@ df_filtrado = df[
     (df['Año'].between(sel_anio[0], sel_anio[1]))
 ]
 
-# --- 4. TÍTULO ---
+#4. TÍTULO
 st.title("🚗 Análisis de Tendencias en el Mercado Automotriz")
 st.markdown(f"A continuación, presentamos un informe interactivo basado en **{len(df_filtrado)}** vehículos de las marcas: *{', '.join(sel_marcas[:5])}*.")
 st.markdown("---")
 
-# --- 5. PESTAÑAS ---
+#5. PESTAÑAS
 tab1, tab2, tab3 = st.tabs(["📊 Resumen General", "🧠 Análisis de Factores", "💰 Estimador de Valor"])
 
-# === PESTAÑA 1: PANORAMA ===
+#PESTAÑA 1: PANORAMA
 with tab1:
     st.subheader("Indicadores Clave de Desempeño (KPIs)")
     # KPIs Estilizados
@@ -95,7 +95,7 @@ with tab1:
         fig.gca().add_artist(circulo)
         st.pyplot(fig)
 
-# === PESTAÑA 2: INTELIGENCIA ===
+#PESTAÑA 2: INTELIGENCIA
 with tab2:
     st.subheader("¿Qué factores determinan el precio?")
     st.markdown("En esta sección analizamos cómo influyen las distintas características técnicas en el valor final del vehículo.")
@@ -131,7 +131,7 @@ with tab2:
     ax.set_ylabel("Precio Estimado ($)")
     st.pyplot(fig)
 
-# === PESTAÑA 3: SIMULADOR ===
+#PESTAÑA 3: SIMULADOR
 with tab3:
     st.header("🤖 Herramienta de Tasación")
     st.markdown("Utiliza nuestra base de datos para estimar el valor justo de un vehículo específico.")
